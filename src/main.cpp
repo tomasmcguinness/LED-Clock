@@ -3,7 +3,8 @@
 #include <Wire.h> //I2C library
 #include <RtcDS3231.h> //RTC library
 
-#define NUM_LEDS 150
+#define NUM_LEDS 60
+
 CRGB leds[NUM_LEDS];
 
 RtcDS3231<TwoWire> rtcObject(Wire);
@@ -11,13 +12,17 @@ RtcDS3231<TwoWire> rtcObject(Wire);
 void setup()
 {
   Serial.begin(9600);
-  //FastLED.addLeds<NEOPIXEL, D2>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, D4>(leds, NUM_LEDS);
 
   rtcObject.Begin();  
 
   RtcDateTime currentTime = RtcDateTime(16,05,18,21,20,0); //define date and time object
   rtcObject.SetDateTime(currentTime);  
 }
+
+int hour = 0;
+int minute = 0;
+int second = 0;
 
 void loop()
 {
@@ -36,26 +41,43 @@ void loop()
  
   Serial.println(str);
 
-  // Serial.write("On");
+  // Wipe all the colours.
+  //
+  leds[minute - 1] = CRGB::Black;
+  leds[minute] = CRGB::Black;
+  leds[minute + 1] = CRGB::Black;
 
-  // leds[1] = CRGB::White;
-  // FastLED.show();
-  // delay(30);
+  leds[hour - 1] = CRGB::Black;
+  leds[hour] = CRGB::Black;
+  leds[hour + 1] = CRGB::Black;
 
-  // Serial.write("Off");
+  leds[second] = CRGB::Black;
 
-  // leds[1] = CRGB::Black;
-  // FastLED.show();
-  // delay(30);
+  // Fetch the current time
+  //
+  hour = currentTime.Hour();
+  minute = currentTime.Minute();
+  second = currentTime.Second();
 
-  // for (int dot = 0; dot < NUM_LEDS; dot++)
-  // {
-  //   leds[dot] = CRGB::Blue;
-  //   FastLED.show();
-  //   // clear this led for the next time around the loop
-  //   leds[dot] = CRGB::Black;
-  //   delay(6);
-  // }
+  // Hour
+  leds[hour - 1] = CRGB::Red;
+  leds[hour] = CRGB::Red;
+  leds[hour + 1] = CRGB::Red;
 
-  delay(250);
+  // Minute
+  leds[minute - 1] = CRGB::Purple;
+
+  if(minute != hour) {
+    leds[minute] = CRGB::Purple;
+  }
+  
+  leds[minute + 1] = CRGB::Purple;
+
+  // Seconds
+  //
+  leds[second] = CRGB::Yellow;
+
+  FastLED.show();
+
+  delay(100);
 }
