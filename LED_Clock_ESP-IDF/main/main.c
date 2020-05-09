@@ -17,21 +17,17 @@ static const uint32_t GADGET_UUID_32 = 0xFE151510;
 static const uint16_t AMAZON_SIG_VID = 0x0171;
 
 static uint8_t gadget_uuid[16] = {0x60, 0x88, 0xd2, 0xb3, 0x98, 0x3a, 0x4e, 0xed, 0x9f, 0x94, 0x5a, 0xd1, 0x25, 0x68, 0x16, 0xb7};
+static uint8_t eir_buffer[50];
 
-static uint8_t eir_buffer[256];
-
+/*
+ * Come from https://developer.amazon.com/en-US/docs/alexa/alexa-gadgets-toolkit/classic-bluetooth-settings.html
+ */
 void build_eir(uint8_t *buffer, const char *name, uint16_t pid, uint16_t vid)
 {
     uint8_t *ptr = buffer;
 
-    // 0x09 Complete Local Name
-    uint8_t name_len = strlen(name);
-    *ptr++ = name_len + 1;
-    *ptr++ = ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME;
-    memcpy(ptr, name, name_len);
-    ptr += name_len;
-
     // 0x06 Incomplete List of 128-bit Service Class UUIDs
+    //
     *ptr++ = 1 + 16; // 1 byte for DataType + 128 bit per each uuid
     *ptr++ = ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID;
     for (int8_t i = 15; i >= 0; --i)
@@ -40,6 +36,7 @@ void build_eir(uint8_t *buffer, const char *name, uint16_t pid, uint16_t vid)
     }
 
     // 0xFF Manufacturer Specific Data
+    //
     *ptr++ = 1 + 10; // 1 byte for DataType + 10 for custom data
     *ptr++ = ESP_BT_EIR_TYPE_MANU_SPECIFIC;
     *ptr++ = vid & 0xff;
@@ -56,8 +53,6 @@ void build_eir(uint8_t *buffer, const char *name, uint16_t pid, uint16_t vid)
 
 void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
-    ESP_LOGI(GAP_TAG, "Something discovery.");
-
     switch (event)
     {
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
@@ -73,24 +68,33 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 
 void bt_app_gap_start_up(void)
 {
-    // memset(eir_buffer, 0, sizeof(eir_buffer));
-    // build_eir(eir_buffer, "Volkhin Nixie Timer", 0x0000, 0xffff);
+    ESP_LOGI(GAP_TAG, "Building EIR...");
 
-    // /* Configure the EIR for Alexa Gadget */
-    // esp_bt_eir_data_t eir_data;
+    memset(eir_buffer, 0, sizeof(eir_buffer));
 
-    // eir_data.manufacturer_len = sizeof(eir_buffer);
-    // eir_data.p_manufacturer_data = eir_buffer;
+    build_eir(eir_buffer, "LED CLOCK", 0x0000, 0xffff);
 
-    // esp_err_t ret = esp_bt_gap_config_eir_data(&eir_data);
+    /* Configure the EIR for Alexa Gadget */
+    esp_bt_eir_data_t eir_data;
 
-    // if (ret != ESP_OK)
-    // {
-    //     ESP_LOGE(GAP_TAG, "Failed to set EIR data");
-    // }
+    eir_data.flag = ESP_BT_EIR_FLAG_GEN_DISC;
+    eir_data.manufacturer_len = sizeof(eir_buffer);
+    eir_data.p_manufacturer_data = eir_buffer;
+
+    ESP_LOGI(GAP_TAG, "Setting EIR...");
+    esp_err_t ret = esp_bt_gap_config_eir_data(&eir_data);
+
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(GAP_TAG, "%s failed to set EIR data: %s\n", __func__, esp_err_to_name(ret));
+    }
+
+    ESP_LOGI(GAP_TAG, "Setting Name...");
 
     char *dev_name = "ESP_GAP_INQRUIY";
     esp_bt_dev_set_device_name(dev_name);
+
+    ESP_LOGI(GAP_TAG, "Making discoverable...");
 
     /* set discoverable and connectable mode, wait to be connected */
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
