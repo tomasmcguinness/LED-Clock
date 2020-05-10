@@ -17,7 +17,7 @@ static const uint32_t GADGET_UUID_32 = 0xFE151510;
 static const uint16_t AMAZON_SIG_VID = 0x0171;
 
 static uint8_t gadget_uuid[16] = {0x60, 0x88, 0xd2, 0xb3, 0x98, 0x3a, 0x4e, 0xed, 0x9f, 0x94, 0x5a, 0xd1, 0x25, 0x68, 0x16, 0xb7};
-static uint8_t eir_buffer[50];
+static uint8_t eir_buffer[28];
 
 /*
  * Come from https://developer.amazon.com/en-US/docs/alexa/alexa-gadgets-toolkit/classic-bluetooth-settings.html
@@ -55,6 +55,9 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
     switch (event)
     {
+    case ESP_BT_GAP_CONFIG_EIR_DATA_EVT:
+        ESP_LOGI(GAP_TAG, "EIR Configuration updated: %d", event);
+        break;
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
     default:
     {
@@ -75,23 +78,23 @@ void bt_app_gap_start_up(void)
     build_eir(eir_buffer, "LED CLOCK", 0x0000, 0xffff);
 
     /* Configure the EIR for Alexa Gadget */
-    esp_bt_eir_data_t eir_data;
+    esp_bt_eir_data_t eir_data = {0};
 
     eir_data.flag = ESP_BT_EIR_FLAG_GEN_DISC;
     eir_data.manufacturer_len = sizeof(eir_buffer);
     eir_data.p_manufacturer_data = eir_buffer;
 
-    ESP_LOGI(GAP_TAG, "Setting EIR...");
-    esp_err_t ret = esp_bt_gap_config_eir_data(&eir_data);
+    // ESP_LOGI(GAP_TAG, "Setting EIR...");
+    // esp_err_t ret = esp_bt_gap_config_eir_data(&eir_data);
 
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(GAP_TAG, "%s failed to set EIR data: %s\n", __func__, esp_err_to_name(ret));
-    }
+    // if (ret != ESP_OK)
+    // {
+    //     ESP_LOGE(GAP_TAG, "%s failed to set EIR data: %s\n", __func__, esp_err_to_name(ret));
+    // }
 
     ESP_LOGI(GAP_TAG, "Setting Name...");
 
-    char *dev_name = "ESP_GAP_INQRUIY";
+    char *dev_name = "LED CLOCK";
     esp_bt_dev_set_device_name(dev_name);
 
     ESP_LOGI(GAP_TAG, "Making discoverable...");
@@ -101,6 +104,9 @@ void bt_app_gap_start_up(void)
 
     /* register GAP callback function */
     esp_bt_gap_register_callback(bt_app_gap_cb);
+    
+    ESP_LOGI(GAP_TAG, "Setting EIR...");
+    esp_bt_gap_config_eir_data(&eir_data);
 
     /* start to discover nearby Bluetooth devices */
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
