@@ -35,6 +35,9 @@ void create_discovery_response()
 {
   ESP_LOGI(TAG, "Creating discover response event");
   pb_ostream_t stream = pb_ostream_from_buffer(out_buffer, sizeof(out_buffer));
+
+  ESP_LOGI(TAG, "Opened stream...");
+
   static alexaDiscovery_DiscoverResponseEventProto env = alexaDiscovery_DiscoverResponseEventProto_init_zero;
 
   strcpy(env.event.header.namespace, "Alexa.Discovery");
@@ -47,7 +50,7 @@ void create_discovery_response()
   strcpy(env.event.payload.endpoints[0].manufacturerName, "Artem Volkhin");
 
   env.event.payload.endpoints[0].capabilities_count = 2;
-  
+
   strcpy(env.event.payload.endpoints[0].capabilities[0].type, "AlexaInterface");
   strcpy(env.event.payload.endpoints[0].capabilities[0].interface, "Alerts");
   strcpy(env.event.payload.endpoints[0].capabilities[0].version, "1.1");
@@ -56,7 +59,7 @@ void create_discovery_response()
   strcpy(env.event.payload.endpoints[0].capabilities[1].version, "1.0");
 
   env.event.payload.endpoints[0].capabilities[1].configuration.supportedTypes_count = 3;
-  
+
   strcpy(env.event.payload.endpoints[0].capabilities[1].configuration.supportedTypes[0].name, "timers");
   strcpy(env.event.payload.endpoints[0].capabilities[1].configuration.supportedTypes[1].name, "timeinfo");
   strcpy(env.event.payload.endpoints[0].capabilities[1].configuration.supportedTypes[2].name, "wakeword");
@@ -68,6 +71,8 @@ void create_discovery_response()
   strcpy(env.event.payload.endpoints[0].additionalIdentification.modelName, "NixieTimer");
   strcpy(env.event.payload.endpoints[0].additionalIdentification.radioAddress, "3C71BF9ABE66");
 
+  ESP_LOGI(TAG, "Encoding payload to stream...");
+
   bool status = pb_encode(&stream, alexaDiscovery_DiscoverResponseEventProto_fields, &env);
   if (!status)
   {
@@ -75,8 +80,18 @@ void create_discovery_response()
     return;
   }
 
+  ESP_LOGI(TAG, "Writing to buffer!");
+
   out_buffer_len = stream.bytes_written;
+
+  if (!send_data_callback)
+  {
+    ESP_LOGE(TAG, "No data_callback specified!");
+    return;
+  }
+
   send_data_callback(out_buffer, out_buffer_len);
+
   memset(out_buffer, 0, sizeof(out_buffer));
   out_buffer_len = 0;
 }

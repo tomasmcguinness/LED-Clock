@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.5)
 set(COMPONENT_SRCDIRS "src" "pb")
 set(COMPONENT_ADD_INCLUDEDIRS "src" "pb")
 register_component()

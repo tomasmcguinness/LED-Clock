@@ -322,6 +322,9 @@ int btstack_main(int argc, const char *argv[])
     sdp_create_gadget(sdp_buffer_gadget, RFCOMM_GADGET_HANDLE, RFCOMM_GADGET_CHANNEL, RFCOMM_GADGET_NAME);
     sdp_register_service(sdp_buffer_gadget);
 
+    // allow the alexa methods a way to send data
+    register_send_data_callback(&outgoing_data_is_ready);
+
     // make this device discoverable
     gap_discoverable_control(1);
 

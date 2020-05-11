@@ -43,6 +43,7 @@
 #include "hci_dump.h"
 
 #include <stddef.h>
+#include "alexa.h"
 
 extern int btstack_main(int argc, const char * argv[]);
 
