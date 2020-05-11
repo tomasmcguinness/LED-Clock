@@ -13,7 +13,11 @@
 
 #define TAG "LEDCLOCK"
 
-static bd_addr_t alexa_bd_addr = {0x44, 0x00, 0x49, 0x0F, 0x6A, 0x10};
+// This is a hardcoded value for an Alex device. 
+// TODO We should store this value for reconnection.
+//
+// Echo Dot Address: 68:37:E9:28:A9:A0
+static bd_addr_t alexa_bd_addr = {0x68, 0x37, 0xE9, 0x28, 0xA9, 0xA0};
 
 static uint8_t eir_buffer[256];
 static uint8_t sdp_buffer_ota[512];
@@ -327,6 +331,9 @@ int btstack_main(int argc, const char *argv[])
 
     // make this device discoverable
     gap_discoverable_control(1);
+
+    // set the name
+    gap_set_local_name("LED CLOCK");
 
     // turn on!
     hci_power_control(HCI_POWER_ON);
