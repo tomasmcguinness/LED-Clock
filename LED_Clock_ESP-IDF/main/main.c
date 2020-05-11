@@ -43,14 +43,19 @@
 #include "hci_dump.h"
 
 #include <stddef.h>
-#include "alexa.h"
 
-extern int btstack_main(int argc, const char * argv[]);
+#include "clock.h"
 
-int app_main(void){
+extern int btstack_main(int argc, const char *argv[]);
 
+//extern "C" void app_main(void)
+void app_main(void)
+{
     // optional: enable packet logger
     // hci_dump_open(NULL, HCI_DUMP_STDOUT);
+    
+    // Setup the LED clock
+    setup_clock();
 
     // Configure BTstack for ESP32 VHCI Controller
     btstack_init();
@@ -60,6 +65,4 @@ int app_main(void){
 
     // Enter run loop (forever)
     btstack_run_loop_execute();
-
-    return 0;
 }
