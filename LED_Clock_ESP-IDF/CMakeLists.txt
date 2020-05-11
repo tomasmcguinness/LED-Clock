@@ -10,3 +10,5 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(gap_inquiry)
+
+set(COMPONENTS "alexa_gadgets_toolkit")
