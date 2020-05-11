@@ -58,6 +58,16 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_CONFIG_EIR_DATA_EVT:
         ESP_LOGI(GAP_TAG, "EIR Configuration updated: %d", event);
         break;
+    case ESP_BT_GAP_CFM_REQ_EVT:
+        ESP_LOGI(GAP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
+        break;
+    case ESP_BT_GAP_KEY_NOTIF_EVT:
+        ESP_LOGI(GAP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
+        break;
+    case ESP_BT_GAP_KEY_REQ_EVT:
+        ESP_LOGI(GAP_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
+        break;
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
     default:
     {
@@ -104,9 +114,13 @@ void bt_app_gap_start_up(void)
 
     /* register GAP callback function */
     esp_bt_gap_register_callback(bt_app_gap_cb);
-    
-    ESP_LOGI(GAP_TAG, "Setting EIR...");
+
+    /* set the EIR data for the gadget */
     esp_bt_gap_config_eir_data(&eir_data);
+
+    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
+    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_NONE;
+    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
 
     /* start to discover nearby Bluetooth devices */
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
