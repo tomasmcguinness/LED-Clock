@@ -24,6 +24,8 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 
+#include "clock.h"
+
 static const char *TAG = "alexa.c";
 
 uint8_t out_buffer[1000];
@@ -112,13 +114,15 @@ void handle_time_info(char *current_time)
   strptime(current_time, "%Y-%m-%dT%H:%M:%S", &tm);
   time_t t = mktime(&tm);
   struct timeval now = {.tv_sec = t};
+
+  // Push this time into the RTC
   settimeofday(&now, NULL);
 
   ESP_LOGI(TAG, "time info: %d %d %d %d %d %d, %ld", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, t);
 
-  // Push this time into the RTC
-  // TODO We need to signal back that the clock is ready for ticking??
-  //RTC.set();
+  // Tell the clock we have the time
+  //
+  set_time();
 }
 
 void set_timer(char *token, char *scheduled_time)
