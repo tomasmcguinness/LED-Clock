@@ -2,4 +2,5 @@
 
 void setup_clock();
 void set_time();
-void start_timer(char* timer_token, struct tm tm);
+void start_timer(struct tm tm);
+void cancel_timer();

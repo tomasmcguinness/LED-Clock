@@ -145,6 +145,8 @@ void cancel_timer()
   ESP_LOGI(TAG, "Cancelling timer");
   memset(timer_token, 0, sizeof(timer_token));
   timer = 0;
+
+  cancel_timer();
 }
 
 void handle_set_alert(pb_istream_t stream)

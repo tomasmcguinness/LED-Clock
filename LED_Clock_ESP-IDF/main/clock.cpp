@@ -127,8 +127,11 @@ void move_timer()
         leds[i] = BOOTING_FG;
     }
 
-    if (remaining_seconds <= 0)
+    // At one second left, just restore the clock.
+    //
+    if (remaining_seconds <= 1)
     {
+        timer = 0;
         mode = CLOCK;
     }
 }
@@ -188,7 +191,7 @@ extern "C" void set_time()
     mode = CLOCK;
 }
 
-extern "C" void start_timer(char *timer_token, tm tm)
+extern "C" void start_timer(tm tm)
 {
     ESP_LOGI(TAG, "Timer requsted!");
 
@@ -197,4 +200,15 @@ extern "C" void start_timer(char *timer_token, tm tm)
 
     timer = tm;
     mode = TIMER;
+}
+
+extern "C" void cancel_timer()
+{
+    ESP_LOGI(TAG, "Cancel timer requsted!");
+
+    FastLED.clear(true);
+    FastLED.show();
+
+    timer = 0;
+    mode = CLOCK;
 }
