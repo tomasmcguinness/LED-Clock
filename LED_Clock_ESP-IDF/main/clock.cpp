@@ -102,6 +102,37 @@ void move_hands()
     }
 }
 
+static struct tm timer;
+
+void move_timer()
+{
+    struct timeval tv;
+    struct timezone tz;
+    struct tm *ptm;
+
+    gettimeofday(&tv, &tz);
+
+    ptm = localtime(&tv.tv_sec);
+
+    // Initial timer works in seconds.
+    //
+    int remaining_seconds = difftime(mktime(&timer),mktime(ptm));
+
+    //ESP_LOGI(TAG, "Timer has %d seconds remaining", remaining_seconds);
+
+    fill(CRGB::Black);
+
+    for(int i = 0; i < remaining_seconds * 2; i++)
+    {
+        leds[i] = BOOTING_FG;
+    }
+
+    if (remaining_seconds <= 0)
+    {
+        mode = CLOCK;
+    }
+}
+
 void animate_clock(void *pvParameters)
 {
     while (true)
@@ -113,6 +144,9 @@ void animate_clock(void *pvParameters)
             break;
         case CLOCK:
             move_hands();
+            break;
+        case TIMER:
+            move_timer();
             break;
         default:
             break;
@@ -147,5 +181,20 @@ extern "C" void setup_clock()
 extern "C" void set_time()
 {
     ESP_LOGI(TAG, "Time has been set");
+
+    FastLED.clear(true);
+    FastLED.show();
+
     mode = CLOCK;
+}
+
+extern "C" void start_timer(char *timer_token, tm tm)
+{
+    ESP_LOGI(TAG, "Timer requsted!");
+
+    FastLED.clear(true);
+    FastLED.show();
+
+    timer = tm;
+    mode = TIMER;
 }

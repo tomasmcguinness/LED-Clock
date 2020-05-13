@@ -135,7 +135,9 @@ void set_timer(char *token, char *scheduled_time)
   strcpy(timer_token, token);
   ESP_LOGI(TAG, "timer: %s %d %d %d %d %d %d", token, tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
-  //start_timer(&timer_token, &tm);
+  // Tell the clock to start a timer
+  //
+  start_timer(timer_token, tm);
 }
 
 void cancel_timer()
