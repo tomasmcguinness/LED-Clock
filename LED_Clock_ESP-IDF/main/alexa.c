@@ -116,11 +116,12 @@ void handle_time_info(char *current_time)
   struct timeval now = {.tv_sec = t};
 
   // Push this time into the RTC
+  //
   settimeofday(&now, NULL);
 
   ESP_LOGI(TAG, "time info: %d %d %d %d %d %d, %ld", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, t);
 
-  // Tell the clock we have the time
+  // Tell the clock we have set the time
   //
   set_time();
 }
@@ -133,6 +134,8 @@ void set_timer(char *token, char *scheduled_time)
   memset(timer_token, 0, sizeof(timer_token));
   strcpy(timer_token, token);
   ESP_LOGI(TAG, "timer: %s %d %d %d %d %d %d", token, tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+  //start_timer(&timer_token, &tm);
 }
 
 void cancel_timer()
