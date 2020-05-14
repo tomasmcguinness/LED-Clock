@@ -137,7 +137,7 @@ void set_timer(char *token, char *scheduled_time)
 
   // Tell the clock to start a timer
   //
-  start_timer(timer_token, tm);
+  start_timer(tm);
 }
 
 void cancel_timer()
@@ -146,7 +146,7 @@ void cancel_timer()
   memset(timer_token, 0, sizeof(timer_token));
   timer = 0;
 
-  cancel_timer();
+  cancel_clock_timer();
 }
 
 void handle_set_alert(pb_istream_t stream)

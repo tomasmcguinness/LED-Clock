@@ -2,7 +2,7 @@
 #include "sys/time.h"
 #include "freertos/FreeRTOS.h"
 
-#define NUM_LEDS 120
+#define NUM_LEDS 72
 #define DATA_PIN 16
 #define LED_TYPE NEOPIXEL
 
@@ -10,15 +10,14 @@ static const char *TAG = "clock.cpp";
 
 CRGB leds[NUM_LEDS];
 
-int i = 0;
-
 // https://github.com/turiphro/alexa-led-ring-animations/blob/master/Alexa_Ring_Animations.ino
 // Alexa colours
 //
-const uint32_t BOOTING_BG = CRGB::Blue;
+//const uint32_t BOOTING_BG = CRGB::Blue;
+const CHSV BOOTING_BG = CHSV(160, 255, 128);
 const uint32_t BOOTING_FG = CRGB::DarkBlue;
 
-void fill(uint32_t colour)
+void fill(CHSV colour)
 {
     for (int i = 0; i < NUM_LEDS; i++)
     {
@@ -26,13 +25,23 @@ void fill(uint32_t colour)
     }
 }
 
-void spinner(uint32_t colour_bg, uint32_t colour_fg, int pos, int width)
+uint8_t hue = 160;
+
+void spinner(CHSV colour_bg, uint32_t colour_fg, int pos, int width)
 {
     fill(colour_bg);
 
+    // leds[pos] = CHSV(hue, 255, 255); // Draw new pixel
+    // leds[pos+1] = CHSV(hue, 255, 210);
+    // leds[pos+2] = CHSV(hue, 255, 180);
+    // leds[pos+3] = CHSV(hue, 255, 90);
+    // leds[pos+4] = CHSV(hue, 255, 50);
+    // leds[pos+5] = CHSV(hue, 255, 10);
+    // leds[pos+6] = CHSV(hue, 255, 0);
+
     for (int i = pos; i < pos + width; i++)
     {
-        leds[i % NUM_LEDS] = colour_fg;
+        leds[i % NUM_LEDS] = CHSV(hue, 255, 255);;
     }
 }
 
@@ -120,7 +129,7 @@ void move_timer()
 
     //ESP_LOGI(TAG, "Timer has %d seconds remaining", remaining_seconds);
 
-    fill(CRGB::Black);
+    //fill(CRGB::Black);
 
     for(int i = 0; i < remaining_seconds * 2; i++)
     {
@@ -131,7 +140,6 @@ void move_timer()
     //
     if (remaining_seconds <= 1)
     {
-        timer = 0;
         mode = CLOCK;
     }
 }
@@ -202,13 +210,12 @@ extern "C" void start_timer(tm tm)
     mode = TIMER;
 }
 
-extern "C" void cancel_timer()
+extern "C" void cancel_clock_timer()
 {
     ESP_LOGI(TAG, "Cancel timer requsted!");
 
     FastLED.clear(true);
     FastLED.show();
 
-    timer = 0;
     mode = CLOCK;
 }

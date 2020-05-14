@@ -14,11 +14,11 @@ void app_main(void)
     setup_clock();
 
     // Configure BTstack for ESP32 VHCI Controller
-    btstack_init();
+    //btstack_init();
 
     // Setup example
-    btstack_main(0, NULL);
+    //btstack_main(0, NULL);
 
     // Enter run loop (forever)
-    btstack_run_loop_execute();
+    //btstack_run_loop_execute();
 }
