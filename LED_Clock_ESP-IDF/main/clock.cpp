@@ -13,7 +13,6 @@ CRGB leds[NUM_LEDS];
 // https://github.com/turiphro/alexa-led-ring-animations/blob/master/Alexa_Ring_Animations.ino
 // Alexa colours
 //
-//const uint32_t BOOTING_BG = CRGB::Blue;
 const CHSV BOOTING_BG = CHSV(160, 255, 128);
 const uint32_t BOOTING_FG = CRGB::DarkBlue;
 
@@ -63,6 +62,8 @@ enum mode
 #define SEC_PER_HOUR 3600
 #define SEC_PER_MIN 60
 
+static struct tm timer;
+
 void move_hands()
 {
     struct timeval tv;
@@ -111,8 +112,6 @@ void move_hands()
     }
 }
 
-static struct tm timer;
-
 void move_timer()
 {
     struct timeval tv;
@@ -123,20 +122,22 @@ void move_timer()
 
     ptm = localtime(&tv.tv_sec);
 
+    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+
     // Initial timer works in seconds.
     //
     int remaining_seconds = difftime(mktime(&timer),mktime(ptm));
 
-    //ESP_LOGI(TAG, "Timer has %d seconds remaining", remaining_seconds);
+    ESP_LOGI(TAG, "Timer has %d seconds remaining", remaining_seconds);
 
-    //fill(CRGB::Black);
+    fill(CHSV(255, 255, 0));
 
     for(int i = 0; i < remaining_seconds * 2; i++)
     {
         leds[i] = BOOTING_FG;
     }
 
-    // At one second left, just restore the clock.
+    // At less than one second left, just restore the clock.
     //
     if (remaining_seconds <= 1)
     {
@@ -146,21 +147,23 @@ void move_timer()
 
 void animate_clock(void *pvParameters)
 {
+    ESP_LOGI(TAG, "animate_clock...");
+
     while (true)
     {
         switch (mode)
         {
-        case BOOTING:
-            spinner(BOOTING_BG, BOOTING_FG, counter, 12);
-            break;
-        case CLOCK:
-            move_hands();
-            break;
-        case TIMER:
-            move_timer();
-            break;
-        default:
-            break;
+            case BOOTING:
+                spinner(BOOTING_BG, BOOTING_FG, counter, 12);
+                break;
+            case CLOCK:
+                move_hands();
+                break;
+            case TIMER:
+                move_timer();
+                break;
+            default:
+                break;
         }
 
         FastLED.show();
@@ -185,6 +188,8 @@ extern "C" void setup_clock()
     FastLED.addLeds<LED_TYPE, DATA_PIN>(leds, NUM_LEDS);
     FastLED.clear(true);
     FastLED.show();
+
+    //fill(BOOTING_BG);
 
     xTaskCreatePinnedToCore(&animate_clock, "animate", 4000, NULL, 5, NULL, 0);
 }
