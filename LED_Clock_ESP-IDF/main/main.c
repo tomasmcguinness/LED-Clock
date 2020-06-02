@@ -10,13 +10,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+static EventGroupHandle_t s_wifi_event_group;
+
 extern int btstack_main(int argc, const char *argv[]);
 
 void app_main(void)
 {
     setup_clock();
 
-    start_wifi();
+    start_wifi(s_wifi_event_group);
 
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 
