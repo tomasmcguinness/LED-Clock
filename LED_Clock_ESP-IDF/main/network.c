@@ -1,10 +1,12 @@
+#include "freertos/FreeRTOS.h"
 #include "mqtt_client.h"
+#include "esp_log.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "freertos/event_groups.h"
 
-#define WIFI_SSID                   "my_wifi_ssid"
-#define WIFI_PASSWORD               "my_wifi_password"
+#define WIFI_SSID                   "JARVIS-IOT"
+#define WIFI_PASSWORD               "pmuvevfu"
 #define WIFI_CONNECTION_ATTEMPTS    5
 
 static EventGroupHandle_t s_wifi_event_group;
@@ -18,7 +20,7 @@ static const char *TAG = "network";
 
 static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
-
+        return ESP_OK;
 }
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -60,7 +62,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 void start_wifi(EventGroupHandle_t s_wifi_event_group)
 {
-    esp_event_loop_create_default();
+    tcpip_adapter_init();
+   
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&cfg);
