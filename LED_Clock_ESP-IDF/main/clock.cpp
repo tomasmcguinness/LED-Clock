@@ -2,9 +2,13 @@
 #include "sys/time.h"
 #include "freertos/FreeRTOS.h"
 
-#define NUM_LEDS 72 //The short testing strip
+#define NUM_LEDS 60 //The short testing strip
+#define HOUR_SIZE NUM_LEDS / 12
+#define SECOND_SIZE 1
+#define MINUTE_SIZE 3
 #define DATA_PIN 16
 #define LED_TYPE NEOPIXEL
+#define DELAY 1000
 
 static const char *TAG = "clock.cpp";
 
@@ -13,7 +17,8 @@ CRGB leds[NUM_LEDS];
 // https://github.com/turiphro/alexa-led-ring-animations/blob/master/Alexa_Ring_Animations.ino
 // Alexa colours
 //
-const CHSV BOOTING_BG = CHSV(160, 255, 128);
+const CHSV BOOTING_BG = CHSV(160, 255, 64);
+const CHSV CLOCK_BG = CHSV(160, 255, 255);
 const uint32_t BOOTING_FG = CRGB::DarkBlue;
 
 void fill(CHSV colour)
@@ -42,7 +47,7 @@ void spinner(CHSV colour_bg, uint32_t colour_fg, int pos, int width)
 
     for (int i = pos; i < pos + width; i++)
     {
-        leds[i % NUM_LEDS] = CHSV(hue, 255, 255);;
+        leds[i % NUM_LEDS] = CHSV(hue, 255, 255);
     }
 }
 
@@ -85,39 +90,83 @@ void move_hands()
     // Break apart hms into h:m:s
     //
     int hour = hms / SEC_PER_HOUR;
+
+    // Change to 12 hour clock
+    //
+    if(hour > 12) 
+    {
+        hour = hour - 12;
+    }
+
     int minute = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
     int second = (hms % SEC_PER_HOUR) % SEC_PER_MIN;
 
-    //ESP_LOGI(TAG, "Current local time: %d:%02d:%02d\n", hour, min, sec);
+    ESP_LOGI(TAG, "Time: %d:%02d:%02d", hour, minute, second);
 
-    fill(BOOTING_BG);
+    fill(CLOCK_BG);
 
     // Set the hands!
     //
-    float part = (minute / 60.0) * 12;
+    float part = (minute / 60.0) * HOUR_SIZE;
 
-    int target_hour = round(part) + (hour * 12);
+    int target_hour = round(part) + (hour * HOUR_SIZE);
 
-    ESP_LOGI(TAG, "hour: %d", target_hour);
+    ESP_LOGI(TAG, "Hour: %d", target_hour);
 
-    for (int i = target_hour - 1; i < target_hour + 2; i++)
+    // Turn off the LEDs for the hour hand
+    //
+    int hour_start = target_hour - (HOUR_SIZE/2);
+    int hour_length = hour_start + HOUR_SIZE;
+    for (int i = hour_start; i < hour_length; i++)
     {
-        leds[i % NUM_LEDS] = CRGB::Black;
+        int target_led = i;
+        if(i < 0) 
+        {
+            target_led = NUM_LEDS + i;
+        }
+
+        leds[target_led % NUM_LEDS] = CRGB::Black;
     }
 
-    // int target_second = second * 2;
+    // Turn off the LEDs for the minute hand
+    //
+    int target_minute = minute * 2;
 
-    // for (int i = target_second - 1; i < target_second + 2; i++)
-    // {
-    //     leds[i % NUM_LEDS] = CRGB::Black;
-    // }
+    ESP_LOGI(TAG, "Minute: %d", target_minute);
 
-    // int target_minute = minute * 2;
+    int minute_start = target_minute - (MINUTE_SIZE / 2);
+    int minute_length = minute_start + MINUTE_SIZE;
+    for (int i = minute_start; i < minute_length; i++)
+    {
+        int target_led = i;
 
-    // for (int i = target_minute - 1; i < target_minute + 2; i++)
-    // {
-    //     leds[i % NUM_LEDS] = CRGB::Black;
-    // }
+        if(i < 0) 
+        {
+            target_led = NUM_LEDS + i;
+        }
+
+        leds[target_led % NUM_LEDS] = CRGB::Black;
+    }
+
+    // Turn off the LEDs for the second hand
+    //
+    int target_second = second * SECOND_SIZE;
+
+    ESP_LOGI(TAG, "Second: %d", target_second);
+
+    int second_start = target_second - (SECOND_SIZE / 2);
+    int second_length = second_start + SECOND_SIZE;
+    for (int i = second_start; i < second_length; i++)
+    {
+        int target_led = i;
+
+        if(i < 0) 
+        {
+            target_led = NUM_LEDS + i;
+        }
+
+        leds[target_led % NUM_LEDS] = CRGB::Black;
+    }
 }
 
 void move_timer()
@@ -160,7 +209,7 @@ void animate_clock(void *pvParameters)
         switch (current_mode)
         {
             case BOOTING:
-                spinner(BOOTING_BG, BOOTING_FG, counter, 12);
+                spinner(BOOTING_BG, BOOTING_FG, counter, NUM_LEDS / 2);
                 break;
             case CLOCK:
                 move_hands();
@@ -183,7 +232,7 @@ void animate_clock(void *pvParameters)
             last_increment = millis();
         }
 
-        delay(100);
+        delay(DELAY);
     }
 }
 
