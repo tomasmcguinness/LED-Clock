@@ -8,7 +8,7 @@
 #define MINUTE_SIZE 3
 #define DATA_PIN 16
 #define LED_TYPE NEOPIXEL
-#define DELAY 1000
+#define DELAY 5
 
 static const char *TAG = "clock.cpp";
 
@@ -18,7 +18,10 @@ CRGB leds[NUM_LEDS];
 // Alexa colours
 //
 const CHSV BOOTING_BG = CHSV(160, 255, 64);
-const CHSV CLOCK_BG = CHSV(160, 255, 255);
+const CHSV CLOCK_BG = CHSV(160, 128, 255);
+const CHSV CLOCK_HOUR = CHSV(160, 128, 255);
+const uint32_t CLOCK_MINUTE = CRGB::Black;
+const uint32_t CLOCK_SECOND = CRGB::Black;
 const uint32_t BOOTING_FG = CRGB::DarkBlue;
 
 void fill(CHSV colour)
@@ -83,9 +86,11 @@ void move_hands()
     gettimeofday(&tv, &tz);
 
     long hms = tv.tv_sec % SEC_PER_DAY;
-    hms += tz.tz_dsttime * SEC_PER_HOUR;
-    hms -= tz.tz_minuteswest * SEC_PER_MIN;
-    hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
+    // Ignore TimeZone information for now.
+    // The NTP doesn't set this.
+    // hms += tz.tz_dsttime * SEC_PER_HOUR;
+    // hms -= tz.tz_minuteswest * SEC_PER_MIN;
+    // hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
 
     // Break apart hms into h:m:s
     //
@@ -125,12 +130,12 @@ void move_hands()
             target_led = NUM_LEDS + i;
         }
 
-        leds[target_led % NUM_LEDS] = CRGB::Black;
+        leds[target_led % NUM_LEDS] = CLOCK_HOUR;
     }
 
     // Turn off the LEDs for the minute hand
     //
-    int target_minute = minute * 2;
+    int target_minute = minute * MINUTE_SIZE;
 
     ESP_LOGI(TAG, "Minute: %d", target_minute);
 
@@ -145,12 +150,12 @@ void move_hands()
             target_led = NUM_LEDS + i;
         }
 
-        leds[target_led % NUM_LEDS] = CRGB::Black;
+        leds[target_led % NUM_LEDS] = CLOCK_MINUTE;
     }
 
     // Turn off the LEDs for the second hand
     //
-    int target_second = second * SECOND_SIZE;
+    int target_second = second;
 
     ESP_LOGI(TAG, "Second: %d", target_second);
 
