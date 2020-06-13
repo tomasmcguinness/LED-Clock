@@ -20,11 +20,10 @@ static const char *TAG = "network";
 
 static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
-        return ESP_OK;
+    return ESP_OK;
 }
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) 
     {
@@ -60,8 +59,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     mqtt_event_handler_cb(event_data);
 }
 
-void start_wifi(EventGroupHandle_t s_wifi_event_group)
+void start_wifi(EventGroupHandle_t event_group)
 {
+    s_wifi_event_group = event_group;
+
     tcpip_adapter_init();
    
     ESP_ERROR_CHECK(esp_event_loop_create_default());

@@ -123,7 +123,7 @@ void handle_time_info(char *current_time)
 
   // Tell the clock we have set the time
   //
-  set_time();
+  start_clock_ticking();
 }
 
 void set_timer(char *token, char *scheduled_time)

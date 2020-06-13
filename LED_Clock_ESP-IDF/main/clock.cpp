@@ -2,7 +2,7 @@
 #include "sys/time.h"
 #include "freertos/FreeRTOS.h"
 
-#define NUM_LEDS 72
+#define NUM_LEDS 72 //The short testing strip
 #define DATA_PIN 16
 #define LED_TYPE NEOPIXEL
 
@@ -28,6 +28,8 @@ uint8_t hue = 160;
 
 void spinner(CHSV colour_bg, uint32_t colour_fg, int pos, int width)
 {
+    ESP_LOGI(TAG, "spinner()");
+
     fill(colour_bg);
 
     // leds[pos] = CHSV(hue, 255, 255); // Draw new pixel
@@ -56,7 +58,9 @@ enum mode
     CLOCK,
     TIMER,
     MESSAGE
-} mode;
+};
+
+static mode current_mode = BOOTING;
 
 #define SEC_PER_DAY 86400
 #define SEC_PER_HOUR 3600
@@ -66,6 +70,8 @@ static struct tm timer;
 
 void move_hands()
 {
+    ESP_LOGI(TAG, "move_hands()");
+
     struct timeval tv;
     struct timezone tz;
 
@@ -74,13 +80,13 @@ void move_hands()
     long hms = tv.tv_sec % SEC_PER_DAY;
     hms += tz.tz_dsttime * SEC_PER_HOUR;
     hms -= tz.tz_minuteswest * SEC_PER_MIN;
-    // mod `hms` to insure in positive range of [0...SEC_PER_DAY)
     hms = (hms + SEC_PER_DAY) % SEC_PER_DAY;
 
-    // Tear apart hms into h:m:s
+    // Break apart hms into h:m:s
+    //
     int hour = hms / SEC_PER_HOUR;
     int minute = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
-    int second = (hms % SEC_PER_HOUR) % SEC_PER_MIN; // or hms % SEC_PER_MIN
+    int second = (hms % SEC_PER_HOUR) % SEC_PER_MIN;
 
     //ESP_LOGI(TAG, "Current local time: %d:%02d:%02d\n", hour, min, sec);
 
@@ -92,28 +98,30 @@ void move_hands()
 
     int target_hour = round(part) + (hour * 12);
 
+    ESP_LOGI(TAG, "hour: %d", target_hour);
+
     for (int i = target_hour - 1; i < target_hour + 2; i++)
     {
         leds[i % NUM_LEDS] = CRGB::Black;
     }
 
-    int target_second = second * 2;
+    // int target_second = second * 2;
 
-    for (int i = target_second - 1; i < target_second + 2; i++)
-    {
-        leds[i % NUM_LEDS] = CRGB::Black;
-    }
+    // for (int i = target_second - 1; i < target_second + 2; i++)
+    // {
+    //     leds[i % NUM_LEDS] = CRGB::Black;
+    // }
 
-    int target_minute = minute * 2;
+    // int target_minute = minute * 2;
 
-    for (int i = target_minute - 1; i < target_minute + 2; i++)
-    {
-        leds[i % NUM_LEDS] = CRGB::Black;
-    }
+    // for (int i = target_minute - 1; i < target_minute + 2; i++)
+    // {
+    //     leds[i % NUM_LEDS] = CRGB::Black;
+    // }
 }
 
 void move_timer()
-{
+{    
     struct timeval tv;
     struct timezone tz;
     struct tm *ptm;
@@ -121,8 +129,6 @@ void move_timer()
     gettimeofday(&tv, &tz);
 
     ptm = localtime(&tv.tv_sec);
-
-    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
 
     // Initial timer works in seconds.
     //
@@ -138,20 +144,20 @@ void move_timer()
     }
 
     // At less than one second left, just restore the clock.
-    //
+    // TODO Start a flashing indication that the timer is done????
     if (remaining_seconds <= 1)
     {
-        mode = CLOCK;
+        current_mode = CLOCK;
     }
 }
 
 void animate_clock(void *pvParameters)
 {
-    ESP_LOGI(TAG, "animate_clock...");
+    ESP_LOGI(TAG, "Animating the clock...");
 
     while (true)
     {
-        switch (mode)
+        switch (current_mode)
         {
             case BOOTING:
                 spinner(BOOTING_BG, BOOTING_FG, counter, 12);
@@ -177,31 +183,31 @@ void animate_clock(void *pvParameters)
             last_increment = millis();
         }
 
-        delay(1);
+        delay(100);
     }
 }
 
 extern "C" void setup_clock()
 {
-    mode = BOOTING;
+    ESP_LOGI(TAG, "Clock has been told to setup!");
+
+    current_mode = BOOTING;
 
     FastLED.addLeds<LED_TYPE, DATA_PIN>(leds, NUM_LEDS);
     FastLED.clear(true);
     FastLED.show();
 
-    //fill(BOOTING_BG);
-
     xTaskCreatePinnedToCore(&animate_clock, "animate", 4000, NULL, 5, NULL, 0);
 }
 
-extern "C" void set_time()
+extern "C" void start_clock_ticking()
 {
-    ESP_LOGI(TAG, "Time has been set");
+    ESP_LOGI(TAG, "Clock has been told to start ticking!");
 
     FastLED.clear(true);
     FastLED.show();
 
-    mode = CLOCK;
+    current_mode = CLOCK;
 }
 
 extern "C" void start_timer(tm tm)
@@ -212,7 +218,7 @@ extern "C" void start_timer(tm tm)
     FastLED.show();
 
     timer = tm;
-    mode = TIMER;
+    current_mode = TIMER;
 }
 
 extern "C" void cancel_clock_timer()
@@ -222,5 +228,5 @@ extern "C" void cancel_clock_timer()
     FastLED.clear(true);
     FastLED.show();
 
-    mode = CLOCK;
+    current_mode = CLOCK;
 }
