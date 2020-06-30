@@ -101,6 +101,9 @@ extern "C" {
 
 #include "esp_log.h"
 
+// needed to work around issue with driver problem in 4.1 and master around 2020
+#include "esp_idf_version.h"
+
 #ifdef __cplusplus
 }
 #endif
@@ -137,9 +140,19 @@ __attribute__ ((always_inline)) inline static uint32_t __clock_cycles() {
 #define NS_TO_CYCLES(n)             ( (n) / NS_PER_CYCLE )
 #define RMT_RESET_DURATION          NS_TO_CYCLES(50000)
 
-// -- Core or custom driver
+// -- Core or custom driver --- 'builtin' is the core driver which is supposedly slower
 #ifndef FASTLED_RMT_BUILTIN_DRIVER
+
+// NOTE!
+// there is an upstream issue with using the custom driver. This is in https://github.com/espressif/esp-idf/issues/5476
+// In this, it states that in order to use one of the functions, the upstream must be modified.
+// 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4,1,0)
+#define FASTLED_RMT_BUILTIN_DRIVER true
+#else
 #define FASTLED_RMT_BUILTIN_DRIVER false
+#endif
+
 #endif
 
 // -- Max number of controllers we can support
@@ -172,6 +185,33 @@ static intr_handle_t gRMT_intr_handle = NULL;
 static xSemaphoreHandle gTX_sem = NULL;
 
 static bool gInitialized = false;
+
+// convert an integer channel into their enums.
+// 
+static rmt_channel_t fastled_get_rmt_channel(int ch) {
+    assert((ch >= 0)  && (ch < 8));
+    switch (ch) {
+        case 0:
+            return(RMT_CHANNEL_0);
+        case 1:
+            return(RMT_CHANNEL_1);
+        case 2:
+            return(RMT_CHANNEL_2);
+        case 3:
+            return(RMT_CHANNEL_3);
+        case 4:
+            return(RMT_CHANNEL_4);
+        case 5:
+            return(RMT_CHANNEL_5);
+        case 6:
+            return(RMT_CHANNEL_6);
+        case 7:
+            return(RMT_CHANNEL_7);
+    }
+    return(RMT_CHANNEL_0);
+}
+
+
 
 template <int DATA_PIN, int T1, int T2, int T3, EOrder RGB_ORDER = RGB, int XTRA0 = 0, bool FLIP = false, int WAIT_TIME = 5>
 class ClocklessController : public CPixelLEDController<RGB_ORDER>
@@ -239,16 +279,23 @@ protected:
         for (int i = 0; i < FASTLED_RMT_MAX_CHANNELS; i++) {
             gOnChannel[i] = NULL;
 
-            // -- RMT configuration for transmission
+            // -- RMT configuration for transmission --- different in different ESP versions
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4,1,0)
+            rmt_config_t rmt_tx = RMT_DEFAULT_CONFIG_TX(mPin, fastled_get_rmt_channel(i) );
+#else
             rmt_config_t rmt_tx;
-            rmt_tx.channel = rmt_channel_t(i);
-            rmt_tx.rmt_mode = RMT_MODE_TX;
-            rmt_tx.gpio_num = mPin;  // The particular pin will be assigned later
+            memset(&rmt_tx, 0, sizeof(rmt_tx));
+            rmt_tx.channel = fastled_get_rmt_channel(i);
+            rmt_tx.gpio_num = mPin;
             rmt_tx.mem_block_num = 1;
-            rmt_tx.clk_div = DIVIDER;
-            rmt_tx.tx_config.loop_en = false;
             rmt_tx.tx_config.carrier_level = RMT_CARRIER_LEVEL_LOW;
+#endif // version before 4.1
+
+            rmt_tx.clk_div = DIVIDER;
+            // don't wish to have a carrier applied. Therefore carrier_en is false and the extra parameters don't matter.
+            rmt_tx.tx_config.loop_en = false;
             rmt_tx.tx_config.carrier_en = false;
+
             rmt_tx.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;
             rmt_tx.tx_config.idle_output_en = true;
                 
@@ -271,6 +318,9 @@ protected:
             xSemaphoreGive(gTX_sem);
         }
                 
+
+    // this was crashing in 4.0. I am hoping that registering the IRS through rmt_isr_register does the right thing.
+
         if ( ! FASTLED_RMT_BUILTIN_DRIVER) {
             // -- Allocate the interrupt if we have not done so yet. This
             //    interrupt handler must work for all different kinds of
