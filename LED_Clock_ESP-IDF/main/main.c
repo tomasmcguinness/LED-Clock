@@ -18,6 +18,8 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
+#include "web.h"
+
 static EventGroupHandle_t s_wifi_event_group;
 
 static const char *TAG = "main";
@@ -30,7 +32,7 @@ extern int btstack_main(int argc, const char *argv[]);
 
 void time_sync_notification_cb(struct timeval *tv)
 {
-    ESP_LOGI(TAG, "Time has been synchronised");
+    ESP_LOGI(TAG, "Time has been synchronised from the internet");
 
     settimeofday(tv, NULL);
 
@@ -81,8 +83,6 @@ void app_main(void)
 {
     setup_clock();
 
-    //start_clock_ticking();
-
     esp_err_t ret = nvs_flash_init();
     
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) 
@@ -108,12 +108,16 @@ void app_main(void)
       time(&now);
       localtime_r(&now, &timeinfo);
 
+      // If we have no time recorded, fetch it from t'internet.
+      //
       if (timeinfo.tm_year < (2016 - 1900)) 
       {
         ESP_LOGI(TAG, "Time is not set yet. Connecting to WiFi and getting time over NTP.");
         obtain_time();
         time(&now);
       }
+
+      start_webserver();
     }
     else if (bits & WIFI_FAIL_BIT) 
     {
@@ -124,16 +128,9 @@ void app_main(void)
 
     }
 
-    //ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
-    //ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
-    //vEventGroupDelete(s_wifi_event_group);
+    btstack_init();
 
-    // Configure BTstack for ESP32 VHCI Controller
-    //btstack_init();
+    btstack_main(0, NULL);
 
-    // Setup example
-    //btstack_main(0, NULL);
-
-    // Enter run loop (forever)
-    //btstack_run_loop_execute();
+    btstack_run_loop_execute();
 }

@@ -36,8 +36,6 @@ uint8_t hue = 160;
 
 void spinner(CHSV colour_bg, uint32_t colour_fg, int pos, int width)
 {
-    ESP_LOGI(TAG, "spinner()");
-
     fill(colour_bg);
 
     // leds[pos] = CHSV(hue, 255, 255); // Draw new pixel
@@ -78,8 +76,6 @@ static struct tm timer;
 
 void move_hands()
 {
-    ESP_LOGI(TAG, "move_hands()");
-
     struct timeval tv;
     struct timezone tz;
 
@@ -106,7 +102,7 @@ void move_hands()
     int minute = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
     int second = (hms % SEC_PER_HOUR) % SEC_PER_MIN;
 
-    ESP_LOGI(TAG, "Time: %d:%02d:%02d", hour, minute, second);
+    //ESP_LOGI(TAG, "Time: %d:%02d:%02d", hour, minute, second);
 
     fill(CLOCK_BG);
 
@@ -116,7 +112,7 @@ void move_hands()
 
     int target_hour = round(part) + (hour * HOUR_SIZE);
 
-    ESP_LOGI(TAG, "Hour: %d", target_hour);
+    //ESP_LOGI(TAG, "Hour: %d", target_hour);
 
     // Turn off the LEDs for the hour hand
     //
@@ -137,7 +133,7 @@ void move_hands()
     //
     int target_minute = minute * MINUTE_SIZE;
 
-    ESP_LOGI(TAG, "Minute: %d", target_minute);
+    //ESP_LOGI(TAG, "Minute: %d", target_minute);
 
     int minute_start = target_minute - (MINUTE_SIZE / 2);
     int minute_length = minute_start + MINUTE_SIZE;
@@ -157,7 +153,7 @@ void move_hands()
     //
     int target_second = second;
 
-    ESP_LOGI(TAG, "Second: %d", target_second);
+    //ESP_LOGI(TAG, "Second: %d", target_second);
 
     int second_start = target_second - (SECOND_SIZE / 2);
     int second_length = second_start + SECOND_SIZE;
@@ -199,6 +195,8 @@ void move_timer()
 
     // At less than one second left, just restore the clock.
     // TODO Start a flashing indication that the timer is done????
+    // TODO Play a sound??
+    //
     if (remaining_seconds <= 1)
     {
         current_mode = CLOCK;
@@ -207,7 +205,7 @@ void move_timer()
 
 void animate_clock(void *pvParameters)
 {
-    ESP_LOGI(TAG, "Animating the clock...");
+    //ESP_LOGI(TAG, "Animating the clock...");
 
     while (true)
     {
