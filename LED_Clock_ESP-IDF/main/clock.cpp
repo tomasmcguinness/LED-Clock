@@ -4,8 +4,8 @@
 
 #define NUM_LEDS 60 //The short testing strip
 #define HOUR_SIZE NUM_LEDS / 12
-#define SECOND_SIZE 1
-#define MINUTE_SIZE 3
+#define SECOND_SIZE NUM_LEDS / 60
+#define MINUTE_SIZE NUM_LEDS / 60
 #define DATA_PIN 16
 #define LED_TYPE NEOPIXEL
 #define DELAY 5
@@ -18,11 +18,19 @@ CRGB leds[NUM_LEDS];
 // Alexa colours
 //
 const CHSV BOOTING_BG = CHSV(160, 255, 64);
-const CHSV CLOCK_BG = CHSV(160, 128, 255);
+const CHSV BOOTING_FG = CHSV(198, 81, 96);
+
+const CHSV CLOCK_BG = CHSV(0, 0, 0);
+
 const CHSV CLOCK_HOUR = CHSV(160, 128, 255);
-const uint32_t CLOCK_MINUTE = CRGB::Black;
-const uint32_t CLOCK_SECOND = CRGB::Black;
-const uint32_t BOOTING_FG = CRGB::DarkBlue;
+const CHSV CLOCK_MINUTE = CHSV(160, 128, 255);
+const CHSV CLOCK_SECOND = CHSV(160, 128, 255);
+
+// const CHSV CLOCK_BG = CHSV(160, 128, 255);
+
+// const CHSV CLOCK_HOUR = CHSV(0, 0, 0);
+// const CHSV CLOCK_MINUTE = CHSV(0, 0, 0);
+// const CHSV CLOCK_SECOND = CHSV(0, 0, 0);
 
 void fill(CHSV colour)
 {
@@ -34,21 +42,13 @@ void fill(CHSV colour)
 
 uint8_t hue = 160;
 
-void spinner(CHSV colour_bg, uint32_t colour_fg, int pos, int width)
+void spinner(CHSV colour_bg, CHSV colour_fg, int pos, int width)
 {
     fill(colour_bg);
 
-    // leds[pos] = CHSV(hue, 255, 255); // Draw new pixel
-    // leds[pos+1] = CHSV(hue, 255, 210);
-    // leds[pos+2] = CHSV(hue, 255, 180);
-    // leds[pos+3] = CHSV(hue, 255, 90);
-    // leds[pos+4] = CHSV(hue, 255, 50);
-    // leds[pos+5] = CHSV(hue, 255, 10);
-    // leds[pos+6] = CHSV(hue, 255, 0);
-
     for (int i = pos; i < pos + width; i++)
     {
-        leds[i % NUM_LEDS] = CHSV(hue, 255, 255);
+        leds[i % NUM_LEDS] = colour_fg;
     }
 }
 
@@ -102,7 +102,7 @@ void move_hands()
     int minute = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
     int second = (hms % SEC_PER_HOUR) % SEC_PER_MIN;
 
-    //ESP_LOGI(TAG, "Time: %d:%02d:%02d", hour, minute, second);
+    ESP_LOGD(TAG, "Time: %d:%02d:%02d", hour, minute, second);
 
     fill(CLOCK_BG);
 
@@ -112,12 +112,11 @@ void move_hands()
 
     int target_hour = round(part) + (hour * HOUR_SIZE);
 
-    //ESP_LOGI(TAG, "Hour: %d", target_hour);
-
     // Turn off the LEDs for the hour hand
     //
-    int hour_start = target_hour - (HOUR_SIZE/2);
+    int hour_start = target_hour - (HOUR_SIZE / 2);
     int hour_length = hour_start + HOUR_SIZE;
+
     for (int i = hour_start; i < hour_length; i++)
     {
         int target_led = i;
@@ -133,10 +132,9 @@ void move_hands()
     //
     int target_minute = minute * MINUTE_SIZE;
 
-    //ESP_LOGI(TAG, "Minute: %d", target_minute);
-
     int minute_start = target_minute - (MINUTE_SIZE / 2);
     int minute_length = minute_start + MINUTE_SIZE;
+
     for (int i = minute_start; i < minute_length; i++)
     {
         int target_led = i;
@@ -153,10 +151,9 @@ void move_hands()
     //
     int target_second = second;
 
-    //ESP_LOGI(TAG, "Second: %d", target_second);
-
     int second_start = target_second - (SECOND_SIZE / 2);
     int second_length = second_start + SECOND_SIZE;
+
     for (int i = second_start; i < second_length; i++)
     {
         int target_led = i;
@@ -166,8 +163,12 @@ void move_hands()
             target_led = NUM_LEDS + i;
         }
 
-        leds[target_led % NUM_LEDS] = CRGB::Black;
+        leds[target_led % NUM_LEDS] = CLOCK_SECOND;
     }
+
+    ESP_LOGD(TAG, "Hour: %d", target_hour);
+    ESP_LOGD(TAG, "Minute: %d", target_minute);
+    ESP_LOGD(TAG, "Second: %d", target_second);
 }
 
 void move_timer()
@@ -205,8 +206,6 @@ void move_timer()
 
 void animate_clock(void *pvParameters)
 {
-    //ESP_LOGI(TAG, "Animating the clock...");
-
     while (true)
     {
         switch (current_mode)

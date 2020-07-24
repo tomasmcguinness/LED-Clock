@@ -32,7 +32,7 @@ extern int btstack_main(int argc, const char *argv[]);
 
 void time_sync_notification_cb(struct timeval *tv)
 {
-    ESP_LOGI(TAG, "Time has been synchronised from the internet");
+    ESP_LOGI(TAG, "Time has been synchronised from the internet!");
 
     settimeofday(tv, NULL);
 
@@ -51,7 +51,7 @@ void time_sync_notification_cb(struct timeval *tv)
     int minute = (hms % SEC_PER_HOUR) / SEC_PER_MIN;
     int second = (hms % SEC_PER_HOUR) % SEC_PER_MIN;
 
-    ESP_LOGI(TAG, "Time: %d:%02d:%02d", hour, minute, second);
+    //ESP_LOGI(TAG, "Time: %d:%02d:%02d", hour, minute, second);
 
     start_clock_ticking();
 }
