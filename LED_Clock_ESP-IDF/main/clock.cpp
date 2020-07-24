@@ -2,8 +2,8 @@
 #include "sys/time.h"
 #include "freertos/FreeRTOS.h"
 
-#define NUM_LEDS 60 //The short testing strip
-#define HOUR_SIZE NUM_LEDS / 12
+#define NUM_LEDS 180 //The short testing strip
+#define HOUR_SIZE NUM_LEDS / 36
 #define SECOND_SIZE NUM_LEDS / 60
 #define MINUTE_SIZE NUM_LEDS / 60
 #define DATA_PIN 16
@@ -22,9 +22,9 @@ const CHSV BOOTING_FG = CHSV(198, 81, 96);
 
 const CHSV CLOCK_BG = CHSV(0, 0, 0);
 
-const CHSV CLOCK_HOUR = CHSV(160, 128, 255);
-const CHSV CLOCK_MINUTE = CHSV(160, 128, 255);
-const CHSV CLOCK_SECOND = CHSV(160, 128, 255);
+const CHSV CLOCK_HOUR = CHSV(160, 128, 64);
+const CHSV CLOCK_MINUTE = CHSV(160, 128, 64);
+const CHSV CLOCK_SECOND = CHSV(160, 128, 64);
 
 // const CHSV CLOCK_BG = CHSV(160, 128, 255);
 
